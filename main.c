@@ -11,7 +11,7 @@
 // TODO: don't limit dose to 2 chars -- right now it's not working otherwise
 
 void get_date(char* buf) {
-    time_t t = time(NULL);
+    time_t t = time(nullptr);
     struct tm tm = *localtime(&t);
 
     snprintf(buf, DATE_LEN + 1, "%02d.%02d.%d", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900);
@@ -23,20 +23,20 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    const char* command = argv[1];
+    const char* const command = argv[1];
 
     if (strcmp(command, "took") != 0) {
         printf("unknown command '%s'\n", command);
         return 1;
     }
 
-    const char* dose_str = argv[2];
+    const char* const dose_str = argv[2];
 
     char* end;
     errno = 0;
-    const long dose = strtol(dose_str, &end, 10);
+    const auto dose = strtol(dose_str, &end, 10);
 
-    if (errno != 0 || end == dose_str || *end != '\0') {
+    if (errno || end == dose_str || *end != '\0') {
         printf("can't parse dose '%s'\n", dose_str);
         return 1;
     }
@@ -63,12 +63,12 @@ int main(int argc, char** argv) {
         // if it is, then add dose,
         // else just append the date and dose to the file
 
-        const long line_len = DATE_LEN + DOSE_LEN + 1; // date + , + dose
+        const auto line_len = DATE_LEN + DOSE_LEN + 1; // date + , + dose
         char last_line[line_len + 1];
 
         fseek(fp, -line_len, SEEK_END);
-        int before_last_line_pos = ftell(fp);
-        size_t len = fread(last_line, sizeof last_line[0], line_len, fp);
+        const auto before_last_line_pos = ftell(fp);
+        auto len = fread(last_line, sizeof last_line[0], line_len, fp);
         last_line[len] = '\0';
 
         if (ferror(fp)) {
@@ -77,20 +77,20 @@ int main(int argc, char** argv) {
             return 1;
         }
 
-        char* last_date_str = strtok(last_line, ",");
-        char* last_dose_str = strtok(NULL, ",");
+        const char* const last_date_str = strtok(last_line, ",");
+        const char* const last_dose_str = strtok(nullptr, ",");
 
         if (strcmp(last_date_str, date_str) == 0) {
             char* end;
             errno = 0;
-            const long last_dose = strtol(last_dose_str, &end, 10);
+            const auto last_dose = strtol(last_dose_str, &end, 10);
 
             if (errno != 0 || end == last_dose_str || *end != '\0') {
                 printf("can't parse dose from the last log line '%s'\n", last_dose_str);
                 return 1;
             }
 
-            const long new_last_dose = dose + last_dose;
+            const auto new_last_dose = dose + last_dose;
 
             ftruncate(fileno(fp), before_last_line_pos + DATE_LEN + 1);
             fprintf(fp, "%ld", new_last_dose);
